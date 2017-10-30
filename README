@@ -1,0 +1,20 @@
+
+uthreads assignment
+----------------
+
+Enclosed to this package is the source code of the uthreads library, as a
+requirement for the csc343/443 assignment. To compile it type 'make', and to
+run it type './test' for a thorough test of the library implementation.
+
+Implementation
+--------------
+
+All the required API functions, according to the assignment specification, were
+implemented. Describing the implementation of each function would be redundant
+as the code is self-explanatory, short, and easy to understand.
+
+A best effort was made to implement the API according to the POSIX pthreads
+specification.
+
+You can find all functions that you need to implement by searching for "NOT_YET_IMPLEMENTED"
+
