@@ -6,6 +6,7 @@
       <in>ta_test.c</in>
       <in>tester.c</in>
       <in>uthread.c</in>
+      <in>uthread_backup.c</in>
       <in>uthread_cond.c</in>
       <in>uthread_ctx.c</in>
       <in>uthread_idle.c</in>
@@ -40,7 +41,7 @@
           <buildCommandWorkingDir>.</buildCommandWorkingDir>
           <buildCommand>${MAKE} -f Makefile</buildCommand>
           <cleanCommand>${MAKE} -f Makefile clean</cleanCommand>
-          <executablePath></executablePath>
+          <executablePath>tester</executablePath>
         </makeTool>
         <preBuild>
           <preBuildCommandWorkingDir>.</preBuildCommandWorkingDir>
@@ -54,6 +55,8 @@
       <item path="tester.c" ex="false" tool="0" flavor2="0">
       </item>
       <item path="uthread.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="uthread_backup.c" ex="false" tool="0" flavor2="0">
       </item>
       <item path="uthread_cond.c" ex="false" tool="0" flavor2="0">
       </item>

@@ -18,6 +18,14 @@
 #include "uthread_sched.h"
 #include "uthread_sched.c"
 
+
+#include "uthread_ctx.h"
+#include "uthread_ctx.c"
+
+#include "uthread_queue.h"
+#include "uthread_queue.c"
+
+
 /*
  * Added these into the tester 
 #include "interpose.c"

@@ -13,6 +13,11 @@
 #include "uthread_sched.h"
 
 
+//#include "uthread_idle.c"
+
+
+
+
 /* ---------- globals -- */
 
 uthread_t	*ut_curthr = NULL;		/* current running thread */
@@ -51,14 +56,35 @@ static void make_reapable(uthread_t *uth);
 void
 uthread_init(void)
 {
-	NOT_YET_IMPLEMENTED("UTHREADS: uthread_init");
-
+    LOG_INIT("Entering uthread_init");
+        LOG_INIT("   uthread_init : initializing array");
+        // create thread array with no states
+        for (int i = 0; i < UTH_MAX_UTHREADS ; i++)
+        { 
+            //memset(&uthreads[i], 0, sizeof(uthread_t));//malloc(sizeof(uthread_t));
+            //uthread_ctx_t *ctx = (uthread_ctx_t *) malloc(sizeof(uthread_ctx_t));
+            //uthread_makecontext(ctx, t->ut_stack, UTH_STACK_SIZE, func, arg1, arg2);
+            //uthreads[i].ut_ctx = *ctx;
+            
+            uthreads[i].ut_id = i;
+            uthreads[i].ut_prio = -1;
+            uthreads[i].ut_state = UT_NO_STATE;
+            uthreads[i].ut_link.l_prev = NULL;
+            uthreads[i].ut_link.l_next = NULL;
+            
+        }
+      
 	/* XXX: don't touch anything below here */
 
 	/* these should go last, and in this order */
+      LOG_INIT("   uthread_init : running uthread_sched_init()");
 	uthread_sched_init();
+        LOG_INIT("   uthread_init : running reaper_init()");
 	reaper_init();
+        LOG_INIT("   uthread_init :running create_first_thr()");
 	create_first_thr();
+        
+        LOG_INIT("************* FINISHED INITIALIZATION *********************");
 }
 
 
@@ -74,12 +100,90 @@ uthread_init(void)
  * and return the aforementioned thread id in <uidp>.  Return 0 on success, -1
  * on error.
  */
+
+
 int
 uthread_create(uthread_id_t *uidp, uthread_func_t func,
 	       long arg1, void *arg2, int prio)
 {
-	NOT_YET_IMPLEMENTED("UTHREADS: uthread_create");
-	return 0;
+    LOG_CREATE("Entering uthread_create");
+ 
+    assert(uidp != NULL);
+    LOG_CREATE("  uthread_create: checking prio");   
+    LOG_CREATE_INT( prio);
+    // TODO:// Unsure
+    if ((prio < 0) || (prio > UTH_MAXPRIO)){
+        errno = EINVAL;
+        return -1;
+    }
+    LOG_CREATE("  uthread_create: finished checking prio");
+    
+    LOG_CREATE("  uthread_create: uthread_alloc");
+    uthread_id_t u;
+    if ((u = uthread_alloc()) == -1){
+        // success
+        errno = EAGAIN;
+        return - 1;
+    }
+    LOG_CREATE("  uthread_create: finished uthread alloc");
+    
+    uthread_t *t;
+    
+    LOG_CREATE("  uthread_create: getting the newly alloc thread from uthreads");
+    for (int i = 0; i < UTH_MAX_UTHREADS; i++)
+    { 
+        if (uthreads[i].ut_id == u){
+            t = &uthreads[i];
+            break;
+        }
+    }
+    LOG_CREATE("  uthread_create: finished getting the newly alloc thread from uthreads");
+    
+    LOG_CREATE("  uthread_create: allocating stack for new thread");
+    if((t->ut_stack = alloc_stack()) == NULL){
+        errno = EAGAIN;
+        return - 1;   
+    }
+    
+    LOG_CREATE("  uthread_create: creating the context");
+    //uthread_ctx_t *ctx = (uthread_ctx_t *) malloc(sizeof(uthread_ctx_t));
+    LOG_CREATE("  uthread_create: calling uthread_makecontext");
+    
+    
+    /*if (t->ut_id == 1){
+        sigset_t myset;
+        (void) sigemptyset(&myset);
+        uthread_makecontext(&t->ut_ctx, t->ut_stack, UTH_STACK_SIZE, (uthread_func_t)sigsuspend, arg1, arg2);
+    } else {*/
+        uthread_makecontext(&t->ut_ctx, t->ut_stack, UTH_STACK_SIZE, func, arg1, arg2);
+    //}
+    
+    LOG_CREATE("  uthread_create: setting the thread to runnable");
+    t->ut_state = UT_RUNNABLE;
+    
+    
+    //uthread_setprio(u, prio);
+    //uidp = &u;
+    
+    LOG_CREATE("  uthread_create: setting the priority of thread");
+    uthread_setprio(t->ut_id, prio);
+    
+    memcpy ( uidp, &u, sizeof ( uthread_id_t ));
+    
+    LOGINT2("create uthread", u);
+    /*
+    LOG_CREATE("*** uthread array ***");
+    for (int i = 0; i < UTH_MAX_UTHREADS; i++)
+    { 
+        if(uthreads[i].ut_state != UT_NO_STATE){
+            LOGINT((int)uthreads[i].ut_id);
+        }
+    }
+    */
+    
+    LOG_CREATE("returning 0;");
+    //NOT_YET_IMPLEMENTED("UTHREADS: uthread_create");
+    return 0;
 }
 
 
@@ -99,10 +203,32 @@ uthread_create(uthread_id_t *uidp, uthread_func_t func,
 void
 uthread_exit(int status)
 {
-	NOT_YET_IMPLEMENTED("UTHREADS: uthread_exit");
-	uthread_switch();
-
-	PANIC("returned to a dead thread");
+    LOG3("Entering uthread_exit");
+    ut_curthr->ut_state = UT_ZOMBIE;
+    ut_curthr->ut_has_exited = true;
+    ut_curthr->ut_exit =status;
+    
+    LOG3("   uthread_exit: checking if (ut_curthr->ut_detached == true )");
+    LOG3("   uthread_exit: else if (ut_curthr->ut_waiter != NULL) ");
+    if (ut_curthr->ut_detached == true ){
+        LOG3("   uthread_exit: calling make_reapable(ut_curthr)");
+        make_reapable(ut_curthr);
+        LOG3("   uthread_exit: finished make_reapable(ut_curthr)");
+    }
+    else{
+        if (ut_curthr->ut_waiter != NULL) 
+        {
+            LOG3("   uthread_exit: calling uthread_wake");
+             uthread_wake(ut_curthr->ut_waiter);
+             LOG3("   uthread_exit: finished uthread_wake");
+             uthread_switch();
+        }
+    }
+    //NOT_YET_IMPLEMENTED("UTHREADS: uthread_exit");
+    LOG("   uthread_exit: calling uthread_switch()");
+    
+    exit(0);
+    PANIC("returned to a dead thread");
 }
 
 
@@ -131,8 +257,76 @@ uthread_exit(int status)
 int
 uthread_join(uthread_id_t uid, int *return_value)
 {
-	NOT_YET_IMPLEMENTED("UTHREADS: uthread_join");
-	return 0;
+    LOG("Entering uthread_join");
+    int is_valid = false;
+    
+    uthread_t *t;
+    
+    LOG("   uthread_join : ");
+    for (int i = 0; i < UTH_MAX_UTHREADS ; i++)
+    { 
+        if ((uthreads[i].ut_id == uid) && (uthreads[i].ut_state != UT_NO_STATE)){
+            t = &uthreads[i];
+            is_valid = true;
+            break;
+        }
+    }
+    
+    
+    if (!is_valid){
+        LOG("   uthread_join : FAILED is_valid");
+        errno = ESRCH;
+        return -1;
+    }
+    
+    if (t->ut_waiter != NULL){
+        LOG("   uthread_join : FAILED if (t->ut_waiter != NULL){ ");
+        errno = EINVAL ;
+        return -1;
+    }
+    
+    if (t->ut_detached == true){
+        LOG("   uthread_join : FAILED if (t->ut_detached == true){");
+        errno = EINVAL;
+        return -1;
+    }
+    
+    // calling thread is trying to join itself
+    if (ut_curthr->ut_id == uid){
+        LOG("   uthread_join : FAILED if (ut_curthr->ut_id == uid){");
+        errno = EDEADLK;
+        return -1;
+    }
+    
+    LOG("   uthread_join : if (ut_curthr->ut_state != UT_ZOMBIE)");
+    if (ut_curthr->ut_state != UT_ZOMBIE){
+        ut_curthr->ut_waiter = t;
+        t->ut_waiter = ut_curthr;
+        
+        
+        
+    LOG("   uthread_join : Entering uthread_block()");    
+         uthread_block();
+         // TODO NOT SURE....
+         t->ut_detached = 1;
+        LOG("   uthread_join : finished uthread_block()");     
+         if (return_value != NULL){
+             return_value = &t->ut_exit;
+         }
+    }
+    return 0;
+    /*
+     * If the target thread has terminated or when it it finally does, now you clean up the target thread by simply setting its ut_detached entry to 1 (ready to be reaped). 
+If the return_value int pointer is not NULL, assign the ut_exit value of the target thread to *return_value.
+Now arrange for the target to be reaped by calling make_reapable with a pointer to the target thread's entry in uthreads. and return 0 (for success)
+
+     
+    
+    NOT_YET_IMPLEMENTED("WORKING ON THIS NOW NEED TO FINSIH THIS PROCEDURE ");
+    
+    NOT_YET_IMPLEMENTED("UTHREADS: uthread_join");
+    return 0;
+     */
 }
 
 
@@ -155,9 +349,39 @@ uthread_join(uthread_id_t uid, int *return_value)
  */
 int
 uthread_detach(uthread_id_t uid)
-{
-	NOT_YET_IMPLEMENTED("UTHREADS: uthread_detach");
-	return 0;
+{   
+    LOG("Entering uthread_detach");
+    int isvalid = false;
+    uthread_t *u;
+    
+    LOG("   uthread_detach: getting the thread to detach");
+    for(int i=0; i <UTH_MAX_UTHREADS; i++ ){
+        if(uthreads[i].ut_id == uid){
+            LOG("   uthread_detach: setting [u = &uthreads[i]; and breaking out of loop]");
+            u = &uthreads[i];
+            isvalid = true;
+            break;
+        }
+    }
+    
+    LOG("   uthread_detach: checking if (!isvalid)");
+    if (!isvalid){
+        LOG("   uthread_detach: not valid");
+        errno = ESRCH;
+        return -1;
+    }
+    
+    LOG("   uthread_detach: setting ut_detached to true");
+    u->ut_detached = true;
+    LOG("   uthread_detach: checking if [if(u->ut_state == UT_ZOMBIE)]");
+    if(u->ut_state == UT_ZOMBIE){
+        LOG("   uthread_detach: calling make_reapable");
+        make_reapable(u);
+    }
+    
+    LOG("   uthread_detach: leaving");   
+	//NOT_YET_IMPLEMENTED("UTHREADS: uthread_detach");
+    return 0;
 }
 
 
@@ -187,11 +411,24 @@ uthread_self(void)
  * find a free uthread_t, returns the id.
  * Remove __attribute__((unused)) when you call this function.
  */
-static uthread_id_t
-__attribute__((unused)) uthread_alloc(void)
+static uthread_id_t uthread_alloc(void)
 {
-	NOT_YET_IMPLEMENTED("UTHREADS: __attribute__");
-	return -1;
+    LOG("Entering uthread_alloc");
+/*    Find the first unused entry in the uthreads array. An entry is unused if its state is UT_NO_STATE.
+        Return the ut_id value of that entry.
+        If no such free entry is found, return -1. */
+    
+    
+    //NOT_YET_IMPLEMENTED("UTHREADS: __attribute__");
+    
+    for (int i = 0;i < UTH_MAX_UTHREADS; i++)
+    { 
+        if (uthreads[i].ut_state == UT_NO_STATE){
+            return uthreads[i].ut_id;
+        }
+    }
+    
+    return -1;
 }
 
 /*
@@ -204,7 +441,11 @@ __attribute__((unused)) uthread_alloc(void)
 static void
 uthread_destroy(uthread_t *uth)
 {
-	NOT_YET_IMPLEMENTED("UTHREADS: uthread_destroy");
+    LOG("Entering uthread_destroy");
+    assert(uth != NULL);
+    free_stack(uth->ut_stack);
+    uth->ut_state = UT_NO_STATE;
+	//NOT_YET_IMPLEMENTED("UTHREADS: uthread_destroy");
 }
 
 
@@ -227,7 +468,7 @@ reaper_init(void)
 {
 	list_init(&reap_queue);
 	uthread_create(&reaper_thr_id, reaper, 0, NULL, UTH_MAXPRIO);
-
+        LOGMINT3("REAPER ID : ", reaper_thr_id);
 	assert(reaper_thr_id != -1);
 }
 
@@ -298,6 +539,7 @@ reaper(long a0, void *a1)
 static void
 create_first_thr(void)
 {
+    LOG_INIT("Entering create_first_thr");
 	uthread_t	hack;
 	uthread_id_t	main_thr;
 
@@ -317,28 +559,39 @@ create_first_thr(void)
 	 * Return.
 	 */
 
+        LOG_INIT("  create_first_thr : ");
 	memset(&hack, 0, sizeof(uthread_t));
 	ut_curthr = &hack;
 	ut_curthr->ut_state = UT_ON_CPU;
-
+        
+        LOG_INIT("  create_first_thr : uthread_create");
 	uthread_create(&main_thr,
 		       (uthread_func_t)0, 0, NULL, UTH_MAXPRIO);
 	assert(main_thr != -1);
-	uthread_detach(main_thr);
+	
+        
+        LOG_INIT("  create_first_thr : uthread_detach(main_thr);");
+        uthread_detach(main_thr);
 
 	/* grab the current context, so when we switch to the main
 	 * thread, we start *right here*.  thus, we only want to call 
 	 * uthread_switch() if the current thread is the hacky temporary
 	 * thread, not a real one.
 	 */
+        
+        LOG_INIT("  create_first_thr : calling uthread_getcontext");
 	uthread_getcontext(&uthreads[main_thr].ut_ctx);
 
 	if (ut_curthr == &hack)
 	{
+            LOG_INIT("  create_first_thr : calling uthread_switch();");
 		uthread_switch();
 	}
 	else
 	{
+            
+            LOG_INIT("  create_first_thr : assert(uthread_self() == main_thr);");
+            LOGINT2("create first", main_thr);
 		/* this should be the 'main_thr' */
 		assert(uthread_self() == main_thr);
 	}
@@ -353,11 +606,12 @@ create_first_thr(void)
  */
 
 static void
-__attribute__((unused)) make_reapable(uthread_t *uth)
+/*__attribute__((unused))*/ make_reapable(uthread_t *uth)
 {
 	assert(uth->ut_detached);
 	assert(uth->ut_state == UT_ZOMBIE);
 	list_insert_tail(&reap_queue, &uth->ut_link);
+        LOGMINT3("CALLING REAPER_ON_THREAD",reaper_thr_id);
 	uthread_wake(&uthreads[reaper_thr_id]);
 }
 

@@ -29,7 +29,7 @@ uthread_makecontext(uthread_ctx_t *ctx, char *stack, int stacksz,
 //#if defined(__linux__) && defined(__i386)	
     ctx->uc_stack.ss_sp = (void*)stack;
 //#else
-  //  ctx->uc_stack.ss_sp = (void*)(stack + stacksz - 2*sizeof(long));
+   // ctx->uc_stack.ss_sp = (void*)(stack + stacksz - 2*sizeof(long));
 //#endif
 	ctx->uc_stack.ss_size = stacksz;
 	ctx->uc_stack.ss_flags = 0;
@@ -51,6 +51,7 @@ uthread_setcontext(uthread_ctx_t *ctx)
 void
 uthread_swapcontext(uthread_ctx_t *oldctx, uthread_ctx_t *newctx)
 {
+    
 	assert(oldctx != NULL && newctx != NULL);
 	swapcontext(oldctx, newctx);
 }

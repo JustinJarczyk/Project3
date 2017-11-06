@@ -18,6 +18,7 @@
 void
 uthread_mtx_init(uthread_mtx_t *mtx)
 {
+    LOG("Entering uthread_mtx_init");
 	NOT_YET_IMPLEMENTED("UTHREADS: uthread_mtx_init");
 }
 

@@ -17,6 +17,7 @@
 void
 uthread_cond_init(uthread_cond_t *cond)
 {
+    LOG("Entering uthread_cond_init");
 	NOT_YET_IMPLEMENTED("UTHREADS: uthread_cond_init");
 }
 
@@ -31,6 +32,7 @@ uthread_cond_init(uthread_cond_t *cond)
 void
 uthread_cond_wait(uthread_cond_t *cond, uthread_mtx_t *mtx)
 {
+    LOG("Entering uthread_cond_wait");
 	NOT_YET_IMPLEMENTED("UTHREADS: uthread_cond_wait");
 }
 
@@ -44,6 +46,7 @@ uthread_cond_wait(uthread_cond_t *cond, uthread_mtx_t *mtx)
 void
 uthread_cond_broadcast(uthread_cond_t *cond)
 {
+    LOG("Entering uthread_cond_broadcast");
 	NOT_YET_IMPLEMENTED("UTHREADS: uthread_cond_broadcast");
 }
 
@@ -58,5 +61,6 @@ uthread_cond_broadcast(uthread_cond_t *cond)
 void
 uthread_cond_signal(uthread_cond_t *cond)
 {
+    LOG("Entering uthread_cond_signal");
 	NOT_YET_IMPLEMENTED("UTHREADS: uthread_cond_signal");
 }

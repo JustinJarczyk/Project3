@@ -31,6 +31,35 @@
 #define	errno	(ut_curthr->ut_errno)
 
 
+#define LOG_INIT(msg) \
+        //fprintf(stderr, "LOG: %s\n",msg)
+
+
+#define LOG_CREATE(msg) \
+        //fprintf(stderr, "LOG: %s\n",msg)
+
+#define LOG_CREATE_INT(msg) \
+        //fprintf(stderr, "LOG: %i\n",msg)
+
+
+#define LOG(msg) \
+        //fprintf(stderr, "LOG: %s\n",msg)
+
+#define LOGMINT(msg, i) \
+        //fprintf(stderr, "LOG: %s [%i]\n",msg, i)
+
+#define LOGINT(msg) \
+        //fprintf(stderr, "LOG: %i\n",msg)
+#define LOGINT2(msg, i) \
+        //fprintf(stderr, "LOG: %s %i\n",msg, i)
+
+#define LOG3(msg) \
+        //fprintf(stderr, "LOG: %s\n",msg)
+
+#define LOGMINT3(msg, i) \
+        //fprintf(stderr, "LOG: %s [%i]\n",msg, i)
+
+
 typedef int uthread_id_t;
 typedef void(*uthread_func_t)(long, void*);
 

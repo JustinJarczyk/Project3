@@ -1,22 +1,28 @@
-
+#include <sched.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/errno.h>
 
+#include <unistd.h>
+
 #include "uthread.h"
 #include "uthread_private.h"
+
 #include "uthread_ctx.h"
 #include "uthread_queue.h"
 #include "uthread_bool.h"
 #include "uthread_sched.h"
+
+//#include "uthread_idle.c"
+
 
 
 /* ---------- globals -- */
 
 /* Remove __attribute__((unused)) when you use this variable. */
 
-static utqueue_t __attribute__((unused)) runq_table[UTH_MAXPRIO + 1];	/* priority runqueues */
+static utqueue_t /*__attribute__((unused))*/ runq_table[UTH_MAXPRIO + 1];	/* priority runqueues */
 
 /* ----------- public code -- */
 
@@ -36,7 +42,11 @@ static utqueue_t __attribute__((unused)) runq_table[UTH_MAXPRIO + 1];	/* priorit
 void
 uthread_yield(void)
 {
-	NOT_YET_IMPLEMENTED("UTHREADS: uthread_yield");
+    LOG("Entering uthread_yield");
+    ut_curthr->ut_state = UT_RUNNABLE ;
+    utqueue_enqueue(runq_table, ut_curthr);
+    uthread_switch();
+	//NOT_YET_IMPLEMENTED("UTHREADS: uthread_yield");
 }
 
 
@@ -50,7 +60,13 @@ uthread_yield(void)
 void
 uthread_block(void) 
 {
-	NOT_YET_IMPLEMENTED("UTHREADS: uthread_block");
+    LOG("Entering uthread_block");
+    if(ut_curthr != NULL){
+        ut_curthr->ut_state = UT_WAIT;
+        uthread_switch() ;  
+    }
+    
+	//NOT_YET_IMPLEMENTED("UTHREADS: uthread_block");
 }
 
 
@@ -65,7 +81,24 @@ uthread_block(void)
 void
 uthread_wake(uthread_t *uthr)
 {
-	NOT_YET_IMPLEMENTED("UTHREADS: uthread_wake");
+    LOG("Entering uthread_wake");
+    assert(uthr != NULL);
+    
+    assert(uthr->ut_prio >= 0);
+    assert(uthr->ut_prio <= UTH_MAXPRIO);
+
+    LOG("   uthread_wake: checking state for UT_WAIT, setting it to UT_RUNNABLE and queueing it");
+    if (uthr->ut_state == UT_WAIT){
+        uthr->ut_state = UT_RUNNABLE;
+        LOG("   uthread_wake: calling utqueue_enqueue(runq_table, uthr)");
+        utqueue_enqueue(runq_table, uthr);
+    }
+    
+    
+    //uthr->ut_link.l_next = NULL;
+    //uthr->ut_link.l_prev = NULL;
+    //utqueue_enqueue(runq_table, uthr);
+	//NOT_YET_IMPLEMENTED("UTHREADS: uthread_wake");
 }
 
 
@@ -80,7 +113,50 @@ uthread_wake(uthread_t *uthr)
 int
 uthread_setprio(uthread_id_t id, int prio)
 {
-	NOT_YET_IMPLEMENTED("UTHREADS: uthread_setprio");
+    LOG("Entering uthread_setprio");
+    int isvalid = false;
+    uthread_t *t;
+    
+    for (int i = 0;i < UTH_MAX_UTHREADS; i++)
+    { 
+        if (uthreads[i].ut_id == id){
+            isvalid = true;
+            t = &uthreads[i];
+            //return uthreads[i].ut_id;
+        }
+    }
+    
+    if (!isvalid){
+        errno = EINVAL;
+        return -1;
+    }
+    
+    // TODO:// NOT SURE HERE [   if ((0 >= prio) && (prio <= UTH_MAXPRIO)){   ]
+    if ((prio < 0) && (prio > UTH_MAXPRIO)){
+        errno = EINVAL;
+        return -1;
+    }
+    
+    if(prio != t->ut_prio){
+        //this is either a new thread or we are changing the priority of an existing thread
+        if(t->ut_state == UT_RUNNABLE){
+            if (t->ut_prio == -1){
+                //if the current priority is -1, this is a new thread and so it isn't yet on a run queue.
+                
+                //t->ut_link->l_prev = NULL;
+                //t->ut_link->l_next = NULL;
+                
+                t->ut_prio = prio;
+                utqueue_enqueue(runq_table, t);
+                return 0;
+            } else {
+                t->ut_prio = prio;
+                utqueue_remove(runq_table, t);
+            }
+        }
+    }
+    
+//	NOT_YET_IMPLEMENTED("UTHREADS: uthread_setprio");
 	return 0;
 }
 
@@ -108,7 +184,53 @@ uthread_setprio(uthread_id_t id, int prio)
 void
 uthread_switch(void)
 {
-	NOT_YET_IMPLEMENTED("UTHREADS: uthread_switch");
+    LOG("Entering uthread_switch");
+    // weird issue, took contents of the uthread_idle() and placed below
+    //uthread_idle();
+    
+    
+    int pre_highest = 0;
+    int isvalid = false;
+    
+    LOG("   uthread_switch: starting while loop");
+    uthread_t *t;
+    while(!isvalid){
+        sched_yield();
+        for (int i = 0; i < UTH_MAX_UTHREADS; i++)
+        { 
+            
+            /*if (uthreads[i].ut_prio != -1){
+                sleep(1);
+                LOG3("*********************");
+                LOGMINT3("THREAD (WAITING) ID: ",uthreads[i].ut_id);
+                LOGMINT3("THREAD (WAITING) PRIORITY ",uthreads[i].ut_prio);
+                LOGMINT3("THREAD (WAITING) STATE ",uthreads[i].ut_state);
+                
+            }*/
+            if ((uthreads[i].ut_prio >= pre_highest) && (uthreads[i].ut_state == UT_RUNNABLE)){
+                t = &uthreads[i];
+                pre_highest = uthreads[i].ut_prio;
+                isvalid = true;
+            }
+        }
+    }
+    LOG("   uthread_switch: exiting while loop");
+    LOGINT2("THIS IS THE HIGHEST PRIORITY JOB ID ", t->ut_id);
+    utqueue_remove(runq_table, t);
+    
+    assert(t->ut_stack != NULL);
+    
+    
+    uthread_t *old_thrd = ut_curthr;
+    ut_curthr = t;
+    t->ut_state = UT_ON_CPU;
+    
+    LOG("   uthread_switch: swapping context");
+    
+        uthread_swapcontext(&old_thrd->ut_ctx, &ut_curthr->ut_ctx);
+        
+    LOG("   uthread_switch: finished swapping context");
+	//NOT_YET_IMPLEMENTED("UTHREADS: uthread_switch");
 }
 
 
@@ -121,5 +243,7 @@ uthread_switch(void)
 void
 uthread_sched_init(void)
 {
-	NOT_YET_IMPLEMENTED("UTHREADS: uthread_sched_init");
+    LOG("Entering uthread_sched_init");
+    utqueue_init(runq_table);
+    //NOT_YET_IMPLEMENTED("UTHREADS: uthread_sched_init");
 }

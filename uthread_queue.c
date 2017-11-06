@@ -45,10 +45,12 @@ utqueue_empty(utqueue_t *q)
 void
 utqueue_enqueue(utqueue_t *q, uthread_t *thr)
 {
+        LOG("Entering utqueue_enqueue");
 	assert(thr->ut_link.l_next == NULL && thr->ut_link.l_prev == NULL);
 
 	list_insert_head(&q->tq_waiters, &thr->ut_link);
 	q->tq_size++;
+        LOG("Leaving utqueue_enqueue");
 }
 
 

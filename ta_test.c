@@ -21,11 +21,16 @@
 #include "uthread_mtx.h"
 #include "uthread_mtx.c"
 
+#include "uthread_ctx.h"
+#include "uthread_ctx.c"
+
 #include "uthread_cond.h"
 #include "uthread_cond.c"
 
 #include "uthread_queue.h"
 #include "uthread_queue.c"
+
+
 /*
  * Added these into the tester 
 #include "interpose.c"
@@ -99,18 +104,23 @@ uthread_cond_t test_pause_cond;
 int
 main(int ac, char **av)
 {
+    //DEBUG("Running ./ta_test \n");
     int ntest;
 
     if (ac < 2) {
        fprintf(stderr, "Usage: %s <test_num>\n", av[0]);
        return -1;
     }
-
+    
+    //DEBUG("   ./ta_test : running uthread_init\n");
     uthread_init();   
+    //DEBUG("   ./ta_test : running test_setup\n");
     test_setup();
 
+    //DEBUG("   ./ta_test : atoi\n");
     ntest = atoi(av[1]);
-	
+    
+    //DEBUG("   ./ta_test : switch case \n");
     switch (ntest) {
         case TEST_QUEUE:
             test_queue();
@@ -145,8 +155,11 @@ main(int ac, char **av)
             fprintf(stderr, "Invalid test number.\n");
     }
 
+    //DEBUG("Test cleanup\n");
     test_cleanup();
-    
+    //DEBUG("Finished Test cleanup\n");
+    // -->> THIS IS WHERE THE SEG FAULT HAPPENS
+    //DEBUG("running uthread_exit(0);\n");
     uthread_exit(0);
     DEBUG("Thread %i got to the end of main, Should have exited THIS IS BAD\n", uthread_self());
     
@@ -185,7 +198,7 @@ static void test_cleanup(){
 * Threads are created on the spot, they are not actual running threads.
 */
 static void test_queue(){
-    DEBUG("Running test_queue()\n");
+    //DEBUG("Running test_queue()\n");
     utqueue_t queue;
     uthread_t threads[10];
     uthread_t* deqthr;
@@ -221,12 +234,17 @@ static void test_queue(){
 static void test_main_thread(){
     DEBUG("Running test_main_thread()\n");
     
+    //LOG("***** test_assert(uthread_self() == 1); ******");
     test_assert(uthread_self() == 1);
+    //LOG("***** uthread_setprio(uthread_self(), 7); ******");
     uthread_setprio(uthread_self(), 7);
+    //LOG("**** uthread_yield(); *******");
     uthread_yield();
+    //LOG("***** uthread_setprio(uthread_self(), 0); ******");
     uthread_setprio(uthread_self(), 0);
+    //LOG("***** uthread_yield(); ******");
     uthread_yield();
-    
+    //LOG("***** est_error(uthread_detach(-1), ESRCH); ******");
     test_error(uthread_detach(-1), ESRCH);
 
     DEBUG("Passed test_main_thread()\n");
@@ -242,12 +260,18 @@ static void test_single_thread(){
     int expected_exit_value = 25;
     int exit_value;
     
+    //DEBUG("Test Reset\n");
     test_reset();
+    //DEBUG("Running test_assert(0 == uthread_create(&thr, thread_dummy_function, expected_exit_value, NULL, 0));\n");
     test_assert(0 == uthread_create(&thr, thread_dummy_function, expected_exit_value, NULL, 0));
+    //DEBUG("test_assert(0 == uthread_join(thr, &exit_value));\n");
     test_assert(0 == uthread_join(thr, &exit_value));
-	test_assert(exit_value == expected_exit_value);
+    //DEBUG("test_assert(exit_value == expected_exit_value);\n");
+    test_assert(exit_value == expected_exit_value);
     
+    //DEBUG("test_error(uthread_join(-1,&exit_value), ESRCH);\n");
     test_error(uthread_join(-1,&exit_value), ESRCH);
+    //DEBUG("test_error(uthread_join(UTH_MAX_UTHREADS+1,&exit_value), ESRCH);\n");
     test_error(uthread_join(UTH_MAX_UTHREADS+1,&exit_value), ESRCH);
     
     DEBUG("Passed test_single_thread()\n");
@@ -487,6 +511,8 @@ static void test_thread_fork_creation(){
 static void
 thread_dummy_function(long a0, void* a1){
     (void) a1;
+    
+    
     uthread_exit(a0);
     DEBUG("Thread %i got to end of thread_dummy_function. Should have exited. THIS IS BAD\n", uthread_self());
 }
