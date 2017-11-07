@@ -149,8 +149,9 @@ uthread_setprio(uthread_id_t id, int prio)
                 utqueue_enqueue(runq_table, t);
                 return 0;
             } else {
-                t->ut_prio = prio;
                 utqueue_remove(runq_table, t);
+                t->ut_prio = prio;
+                utqueue_enqueue(runq_table, t);
             }
         }
     }
@@ -204,7 +205,7 @@ uthread_switch(void)
         for (int i = 0; i < UTH_MAX_UTHREADS; i++)
         { 
             
-            if (uthreads[i].ut_prio != -1){
+            /*if (uthreads[i].ut_prio != -1){
                 
                 LOG5("*********************");
                 LOG5MINT("THREAD ID: ",uthreads[i].ut_id);
@@ -213,9 +214,10 @@ uthread_switch(void)
                     LOG5MINT("=====>  Waiter ",uthreads[i].ut_waiter->ut_id);
                 }
                 LOG5MINT("THREAD (WAITING) STATE ",uthreads[i].ut_state);  
-            }
+            }*/
             
             if ((uthreads[i].ut_prio >= pre_highest) && (uthreads[i].ut_state == UT_RUNNABLE)){
+                    //&& (uthreads[i].ut_link.l_next != NULL && uthreads[i].ut_link.l_prev != NULL)){ // TEST 5 ???
                 t = &uthreads[i];
                 LOG6MINT("SETTING NEXT RUN THREAD : ", uthreads[i].ut_id);
                 pre_highest = uthreads[i].ut_prio;
@@ -225,22 +227,26 @@ uthread_switch(void)
     }
     LOG("   uthread_switch: exiting while loop");
     LOGINT2("THIS IS THE HIGHEST PRIORITY JOB ID ", t->ut_id);
+    
+
     utqueue_remove(runq_table, t);
-    
+
+
     assert(t->ut_stack != NULL);
-    
-    
+
+
     uthread_t *old_thrd = ut_curthr;
     ut_curthr = t;
     //t->ut_state = UT_ON_CPU;
     ut_curthr->ut_state = UT_ON_CPU;
-    
+
     LOG("   uthread_switch: swapping context");
-    
+
         uthread_swapcontext(&old_thrd->ut_ctx, &ut_curthr->ut_ctx);
-        
+
     LOG("   uthread_switch: finished swapping context");
-	//NOT_YET_IMPLEMENTED("UTHREADS: uthread_switch");
+        //NOT_YET_IMPLEMENTED("UTHREADS: uthread_switch");
+
 }
 
 

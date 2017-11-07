@@ -18,11 +18,17 @@
 void
 uthread_mtx_init(uthread_mtx_t *mtx)
 {
+<<<<<<< HEAD
    // LOG("Entering uthread_mtx_init");
 	//NOT_YET_IMPLEMENTED("UTHREADS: uthread_mtx_init");
     mtx->m_owner = NULL;
     utqueue_init(&mtx->m_waiters);
 
+=======
+    LOG("Entering uthread_mtx_init");
+    
+    NOT_YET_IMPLEMENTED("UTHREADS: uthread_mtx_init");
+>>>>>>> bb1664b5ace517ec6a60d76f65da9517a56b015a
 }
 
 
