@@ -14,7 +14,7 @@ EXECS		= ta_test.o  tester.o
 
 CC			= gcc
 
-CFLAGS		= -g -Wall -Werror -fPIC
+CFLAGS		= -g -Wall -fPIC
 #CFLAGS		= -ggdb -Wall -Werror -fPIC
 #CFLAGS		= -g -Wall -Werror
 

@@ -18,8 +18,11 @@
 void
 uthread_mtx_init(uthread_mtx_t *mtx)
 {
-    LOG("Entering uthread_mtx_init");
-	NOT_YET_IMPLEMENTED("UTHREADS: uthread_mtx_init");
+   // LOG("Entering uthread_mtx_init");
+	//NOT_YET_IMPLEMENTED("UTHREADS: uthread_mtx_init");
+    mtx->m_owner = NULL;
+    utqueue_init(&mtx->m_waiters);
+
 }
 
 
@@ -33,7 +36,15 @@ uthread_mtx_init(uthread_mtx_t *mtx)
 void
 uthread_mtx_lock(uthread_mtx_t *mtx)
 {
-	NOT_YET_IMPLEMENTED("UTHREADS: uthread_mtx_lock");
+        //NOT_YET_IMPLEMENTED("UTHREADS: uthread_mtx_lock");
+        if (mtx->m_owner) {
+            ut_curthr->ut_state = UT_WAIT;
+            utqueue_enqueue(&mtx->m_waiters, ut_curthr);
+            uthread_block();
+        }
+        else {
+            mtx->m_owner = ut_curthr;
+        }
 }
 
 
@@ -46,8 +57,14 @@ uthread_mtx_lock(uthread_mtx_t *mtx)
 int
 uthread_mtx_trylock(uthread_mtx_t *mtx)
 {
-	NOT_YET_IMPLEMENTED("UTHREADS: uthread_mtx_trylock");
-	return 0;
+	//NOT_YET_IMPLEMENTED("UTHREADS: uthread_mtx_trylock");
+	//return 0;
+        if(!mtx->m_owner) {
+            mtx->m_owner = ut_curthr;
+            return 1;
+        }
+
+        return 0;
 }
 
 
@@ -61,5 +78,16 @@ uthread_mtx_trylock(uthread_mtx_t *mtx)
 void
 uthread_mtx_unlock(uthread_mtx_t *mtx)
 {
-	NOT_YET_IMPLEMENTED("UTHREADS: uthread_mtx_unlock");
+	//NOT_YET_IMPLEMENTED("UTHREADS: uthread_mtx_unlock");
+        
+    if (utqueue_empty(&mtx->m_waiters)) {
+        mtx->m_owner = NULL;
+    }
+    else {
+        uthread_t *next_thread = utqueue_dequeue(&mtx->m_waiters);
+        mtx->m_owner = next_thread;
+        uthread_wake(next_thread);
+    }
 }
+
+
