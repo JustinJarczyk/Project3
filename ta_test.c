@@ -340,11 +340,14 @@ static void test_priority(){
     int thread_number, exit_value;
     
     test_reset();
+    
     for(thread_number = 0; thread_number < num_thr; thread_number++){
         test_assert(0 == uthread_create(&thr[thread_number],
                     thread_add_ten_to_counter, thread_number, NULL, thread_number%(UTH_MAXPRIO)));
     }
+    
     uthread_setprio(thr[0],UTH_MAXPRIO);
+    
     for (thread_number = 0; thread_number < num_thr; thread_number++){
         exit_value = 0;
         test_assert(0 == uthread_join(thr[thread_number], &exit_value));
