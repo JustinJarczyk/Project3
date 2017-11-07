@@ -17,16 +17,11 @@
 void
 uthread_cond_init(uthread_cond_t *cond)
 {
-<<<<<<< HEAD
+
     utqueue_init(&cond->uc_waiters);
     
     //LOG("Entering uthread_cond_init");
 	//NOT_YET_IMPLEMENTED("UTHREADS: uthread_cond_init");
-=======
-    LOG("Entering uthread_cond_init");
-    
-    NOT_YET_IMPLEMENTED("UTHREADS: uthread_cond_init");
->>>>>>> bb1664b5ace517ec6a60d76f65da9517a56b015a
 }
 
 
@@ -41,7 +36,6 @@ void
 uthread_cond_wait(uthread_cond_t *cond, uthread_mtx_t *mtx)
 {
     LOG("Entering uthread_cond_wait");
-<<<<<<< HEAD
     assert(mtx -> m_owner == ut_curthr);
     ut_curthr -> ut_state = UT_WAIT;
     utqueue_enqueue(&cond -> uc_waiters, ut_curthr);
@@ -51,9 +45,6 @@ uthread_cond_wait(uthread_cond_t *cond, uthread_mtx_t *mtx)
 	
     
     //NOT_YET_IMPLEMENTED("UTHREADS: uthread_cond_wait");
-=======
-    NOT_YET_IMPLEMENTED("UTHREADS: uthread_cond_wait");
->>>>>>> bb1664b5ace517ec6a60d76f65da9517a56b015a
 }
 
 
@@ -67,16 +58,14 @@ void
 uthread_cond_broadcast(uthread_cond_t *cond)
 {
     LOG("Entering uthread_cond_broadcast");
-<<<<<<< HEAD
+
 	//NOT_YET_IMPLEMENTED("UTHREADS: uthread_cond_broadcast");
     uthread_t *tempthr;
     while (!utqueue_empty(&cond -> uc_waiters)) {
         tempthr = utqueue_dequeue(&cond -> uc_waiters);
         uthread_wake(tempthr);
     }
-=======
-    NOT_YET_IMPLEMENTED("UTHREADS: uthread_cond_broadcast");
->>>>>>> bb1664b5ace517ec6a60d76f65da9517a56b015a
+
 }
 
 
@@ -91,15 +80,13 @@ void
 uthread_cond_signal(uthread_cond_t *cond)
 {
     LOG("Entering uthread_cond_signal");
-<<<<<<< HEAD
+
 	//NOT_YET_IMPLEMENTED("UTHREADS: uthread_cond_signal");
     uthread_t *tempthr;
     if (!utqueue_empty(&cond -> uc_waiters)) {
         tempthr = utqueue_dequeue(&cond -> uc_waiters);
         uthread_wake(tempthr);
     }
-=======
-    NOT_YET_IMPLEMENTED("UTHREADS: uthread_cond_signal");
->>>>>>> bb1664b5ace517ec6a60d76f65da9517a56b015a
+
 }
 
