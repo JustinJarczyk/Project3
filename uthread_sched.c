@@ -4,9 +4,11 @@
 #include <stdlib.h>
 #include <sys/errno.h>
 
+
 #include <unistd.h>
 
 #include "uthread.h"
+
 #include "uthread_private.h"
 
 #include "uthread_ctx.h"
@@ -93,12 +95,7 @@ uthread_wake(uthread_t *uthr)
         LOG("   uthread_wake: calling utqueue_enqueue(runq_table, uthr)");
         utqueue_enqueue(runq_table, uthr);
     }
-    
-    
-    //uthr->ut_link.l_next = NULL;
-    //uthr->ut_link.l_prev = NULL;
-    //utqueue_enqueue(runq_table, uthr);
-	//NOT_YET_IMPLEMENTED("UTHREADS: uthread_wake");
+    //NOT_YET_IMPLEMENTED("UTHREADS: uthread_wake");
 }
 
 
@@ -187,26 +184,34 @@ uthread_switch(void)
     LOG("Entering uthread_switch");
     // weird issue, took contents of the uthread_idle() and placed below
     //uthread_idle();
-    
-    
     int pre_highest = 0;
+    
     int isvalid = false;
+    
     
     LOG("   uthread_switch: starting while loop");
     uthread_t *t;
     while(!isvalid){
         sched_yield();
+        //sleep(1);
+        pre_highest = 0;
+
+        
+        //LOG4("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
         for (int i = 0; i < UTH_MAX_UTHREADS; i++)
         { 
             
             /*if (uthreads[i].ut_prio != -1){
-                sleep(1);
-                LOG3("*********************");
-                LOGMINT3("THREAD (WAITING) ID: ",uthreads[i].ut_id);
-                LOGMINT3("THREAD (WAITING) PRIORITY ",uthreads[i].ut_prio);
-                LOGMINT3("THREAD (WAITING) STATE ",uthreads[i].ut_state);
                 
+                LOG5("*********************");
+                LOG5MINT("THREAD ID: ",uthreads[i].ut_id);
+                LOG5MINT("THREAD  PRIORITY ",uthreads[i].ut_prio);
+                if (uthreads[i].ut_waiter != NULL){
+                    LOG5MINT("=====>  Waiter ",uthreads[i].ut_waiter->ut_id);
+                }
+                LOG5MINT("THREAD (WAITING) STATE ",uthreads[i].ut_state);  
             }*/
+            
             if ((uthreads[i].ut_prio >= pre_highest) && (uthreads[i].ut_state == UT_RUNNABLE)){
                 t = &uthreads[i];
                 pre_highest = uthreads[i].ut_prio;
@@ -223,7 +228,8 @@ uthread_switch(void)
     
     uthread_t *old_thrd = ut_curthr;
     ut_curthr = t;
-    t->ut_state = UT_ON_CPU;
+    //t->ut_state = UT_ON_CPU;
+    ut_curthr->ut_state = UT_ON_CPU;
     
     LOG("   uthread_switch: swapping context");
     

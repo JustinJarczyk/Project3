@@ -198,7 +198,7 @@ static void test_cleanup(){
 * Threads are created on the spot, they are not actual running threads.
 */
 static void test_queue(){
-    //DEBUG("Running test_queue()\n");
+    DEBUG("Running test_queue()\n");
     utqueue_t queue;
     uthread_t threads[10];
     uthread_t* deqthr;
@@ -286,16 +286,21 @@ static void test_multiple_threads(){
     int num_threads = 8;
     int thread_number, exit_value;
     
+    //DEBUG("Running test_multiple_threads()\n");
     test_reset();
+    //DEBUG("Running test_multiple_threads()\n");
     for(thread_number = 0; thread_number < num_threads; thread_number++){
+        LOG4MINT("Creating thread : ", thread_number);
         test_assert(0 == uthread_create(&thr[thread_number], thread_dummy_function, thread_number, NULL, 0));
     }
+    //DEBUG("Running test_multiple_threads()\n");
     for (thread_number = 0; thread_number < num_threads; thread_number++){
         exit_value = 0;
+        LOG4MINT("Joining thread : ", thread_number);
         test_assert(0 == uthread_join(thr[thread_number], &exit_value));
         test_assert(exit_value == thread_number);
     }
-    
+   // DEBUG("Running test_multiple_threads()\n");
     DEBUG("Passed test_multiple_threads()\n");
 }
 

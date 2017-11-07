@@ -61,11 +61,6 @@ uthread_init(void)
         // create thread array with no states
         for (int i = 0; i < UTH_MAX_UTHREADS ; i++)
         { 
-            //memset(&uthreads[i], 0, sizeof(uthread_t));//malloc(sizeof(uthread_t));
-            //uthread_ctx_t *ctx = (uthread_ctx_t *) malloc(sizeof(uthread_ctx_t));
-            //uthread_makecontext(ctx, t->ut_stack, UTH_STACK_SIZE, func, arg1, arg2);
-            //uthreads[i].ut_ctx = *ctx;
-            
             uthreads[i].ut_id = i;
             uthreads[i].ut_prio = -1;
             uthreads[i].ut_state = UT_NO_STATE;
@@ -150,13 +145,9 @@ uthread_create(uthread_id_t *uidp, uthread_func_t func,
     LOG_CREATE("  uthread_create: calling uthread_makecontext");
     
     
-    /*if (t->ut_id == 1){
-        sigset_t myset;
-        (void) sigemptyset(&myset);
-        uthread_makecontext(&t->ut_ctx, t->ut_stack, UTH_STACK_SIZE, (uthread_func_t)sigsuspend, arg1, arg2);
-    } else {*/
-        uthread_makecontext(&t->ut_ctx, t->ut_stack, UTH_STACK_SIZE, func, arg1, arg2);
-    //}
+
+    uthread_makecontext(&t->ut_ctx, t->ut_stack, UTH_STACK_SIZE, func, arg1, arg2);
+
     
     LOG_CREATE("  uthread_create: setting the thread to runnable");
     t->ut_state = UT_RUNNABLE;
@@ -203,7 +194,8 @@ uthread_create(uthread_id_t *uidp, uthread_func_t func,
 void
 uthread_exit(int status)
 {
-    LOG3("Entering uthread_exit");
+    
+    LOG4("Entering uthread_exit");
     ut_curthr->ut_state = UT_ZOMBIE;
     ut_curthr->ut_has_exited = true;
     ut_curthr->ut_exit =status;
@@ -213,21 +205,35 @@ uthread_exit(int status)
     if (ut_curthr->ut_detached == true ){
         LOG3("   uthread_exit: calling make_reapable(ut_curthr)");
         make_reapable(ut_curthr);
+        
         LOG3("   uthread_exit: finished make_reapable(ut_curthr)");
     }
     else{
         if (ut_curthr->ut_waiter != NULL) 
         {
             LOG3("   uthread_exit: calling uthread_wake");
-             uthread_wake(ut_curthr->ut_waiter);
+             uthread_wake(ut_curthr->ut_waiter);   
              LOG3("   uthread_exit: finished uthread_wake");
-             uthread_switch();
+             //uthread_detach(ut_curthr->ut_id);
         }
+        ut_curthr->ut_detached = 1;
+        make_reapable(ut_curthr);  
     }
+    
+    
+    
     //NOT_YET_IMPLEMENTED("UTHREADS: uthread_exit");
     LOG("   uthread_exit: calling uthread_switch()");
     
-    exit(0);
+    if (ut_curthr->ut_id > 1){
+        
+        uthread_switch();
+        exit(0);
+    } else {
+        // just exit out of the main thread
+        exit(0);
+    }
+        
     PANIC("returned to a dead thread");
 }
 
@@ -300,20 +306,24 @@ uthread_join(uthread_id_t uid, int *return_value)
     
     LOG("   uthread_join : if (ut_curthr->ut_state != UT_ZOMBIE)");
     if (ut_curthr->ut_state != UT_ZOMBIE){
-        ut_curthr->ut_waiter = t;
+        //ut_curthr->ut_waiter = t;
         t->ut_waiter = ut_curthr;
-        
-        
-        
-    LOG("   uthread_join : Entering uthread_block()");    
-         uthread_block();
-         // TODO NOT SURE....
-         t->ut_detached = 1;
-        LOG("   uthread_join : finished uthread_block()");     
-         if (return_value != NULL){
-             return_value = &t->ut_exit;
-         }
+        uthread_block();
     }
+    
+    
+    t->ut_detached = 1;
+    make_reapable(t);
+    
+    LOG("   uthread_join : Entering uthread_block()");    
+    LOG("   uthread_join : finished uthread_block()");     
+    
+    
+     if (return_value != NULL){
+         return_value = &t->ut_exit;
+     }
+
+
     return 0;
     /*
      * If the target thread has terminated or when it it finally does, now you clean up the target thread by simply setting its ut_detached entry to 1 (ready to be reaped). 
@@ -350,7 +360,7 @@ Now arrange for the target to be reaped by calling make_reapable with a pointer 
 int
 uthread_detach(uthread_id_t uid)
 {   
-    LOG("Entering uthread_detach");
+    LOG4("Entering uthread_detach");
     int isvalid = false;
     uthread_t *u;
     
@@ -374,6 +384,7 @@ uthread_detach(uthread_id_t uid)
     LOG("   uthread_detach: setting ut_detached to true");
     u->ut_detached = true;
     LOG("   uthread_detach: checking if [if(u->ut_state == UT_ZOMBIE)]");
+    
     if(u->ut_state == UT_ZOMBIE){
         LOG("   uthread_detach: calling make_reapable");
         make_reapable(u);
@@ -605,6 +616,13 @@ create_first_thr(void)
  * Remove __attribute__((unused)) when you call these functions.
  */
 
+/*
+void make_reap_wrap(uthread_t *uth)
+{
+    
+    make_reapable(uth);
+}
+*/
 static void
 /*__attribute__((unused))*/ make_reapable(uthread_t *uth)
 {

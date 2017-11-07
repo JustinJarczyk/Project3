@@ -59,6 +59,20 @@
 #define LOGMINT3(msg, i) \
         //fprintf(stderr, "LOG: %s [%i]\n",msg, i)
 
+#define LOG4(msg) \
+        //fprintf(stderr, "LOG: %s\n",msg)
+
+#define LOG4MINT(msg, i) \
+        //fprintf(stderr, "LOG: %s [%i]\n",msg, i)
+
+
+#define LOG5(msg) \
+        //fprintf(stderr, "LOG: %s\n",msg)
+
+#define LOG5MINT(msg, i) \
+        //fprintf(stderr, "LOG: %s [%i]\n",msg, i)
+
+
 
 typedef int uthread_id_t;
 typedef void(*uthread_func_t)(long, void*);
@@ -115,5 +129,7 @@ uthread_id_t uthread_self(void);
 
 int uthread_join(uthread_id_t id, int *exit_value);
 int uthread_detach(uthread_id_t id);
+
+//void make_reap_wrap(uthread_t *uth);
 
 #endif /* __uthread_h__ */
