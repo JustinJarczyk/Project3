@@ -159,8 +159,10 @@ uthread_create(uthread_id_t *uidp, uthread_func_t func,
     LOG_CREATE("  uthread_create: setting the priority of thread");
     uthread_setprio(t->ut_id, prio);
     
-    memcpy ( uidp, &u, sizeof ( uthread_id_t ));
+    //uidp = &t->ut_id;
     
+    memcpy ( uidp, &u, sizeof ( uthread_id_t ));
+    LOG6MINT("ID", *uidp);
     LOGINT2("create uthread", u);
     /*
     LOG_CREATE("*** uthread array ***");
@@ -216,8 +218,8 @@ uthread_exit(int status)
              LOG3("   uthread_exit: finished uthread_wake");
              //uthread_detach(ut_curthr->ut_id);
         }
-        ut_curthr->ut_detached = 1;
-        make_reapable(ut_curthr);  
+        //ut_curthr->ut_detached = 1;
+        //make_reapable(ut_curthr);  
     }
     
     
@@ -230,10 +232,11 @@ uthread_exit(int status)
         uthread_switch();
         exit(0);
     } else {
+        //uthread_switch();
         // just exit out of the main thread
         exit(0);
     }
-        
+    
     PANIC("returned to a dead thread");
 }
 
@@ -282,18 +285,21 @@ uthread_join(uthread_id_t uid, int *return_value)
     if (!is_valid){
         LOG("   uthread_join : FAILED is_valid");
         errno = ESRCH;
+        LOG6MINT("Not Valid Thread ID = ",uid);
         return -1;
     }
     
     if (t->ut_waiter != NULL){
         LOG("   uthread_join : FAILED if (t->ut_waiter != NULL){ ");
         errno = EINVAL ;
+        LOG6MINT("Not Valid Thread ID 2 = ",uid);
         return -1;
     }
     
     if (t->ut_detached == true){
         LOG("   uthread_join : FAILED if (t->ut_detached == true){");
         errno = EINVAL;
+        LOG6MINT("Not Valid Thread ID 3 = ",uid);
         return -1;
     }
     
@@ -301,14 +307,16 @@ uthread_join(uthread_id_t uid, int *return_value)
     if (ut_curthr->ut_id == uid){
         LOG("   uthread_join : FAILED if (ut_curthr->ut_id == uid){");
         errno = EDEADLK;
+        LOG6MINT("Not Valid Thread ID 4 = ",uid);
         return -1;
     }
     
     LOG("   uthread_join : if (ut_curthr->ut_state != UT_ZOMBIE)");
-    if (ut_curthr->ut_state != UT_ZOMBIE){
+    if (t->ut_state != UT_ZOMBIE){
         //ut_curthr->ut_waiter = t;
         t->ut_waiter = ut_curthr;
         uthread_block();
+        LOG6MINT("Not Valid Thread ID 5 = ",uid);
     }
     
     
@@ -320,7 +328,8 @@ uthread_join(uthread_id_t uid, int *return_value)
     
     
      if (return_value != NULL){
-         return_value = &t->ut_exit;
+         memcpy ( return_value, &t->ut_exit, sizeof ( uthread_id_t ));
+         //return_value = &t->ut_exit;
      }
 
 

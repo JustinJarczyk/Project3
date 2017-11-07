@@ -290,13 +290,16 @@ static void test_multiple_threads(){
     test_reset();
     //DEBUG("Running test_multiple_threads()\n");
     for(thread_number = 0; thread_number < num_threads; thread_number++){
-        LOG4MINT("Creating thread : ", thread_number);
+        LOG6MINT("Creating thread : ", thread_number);
         test_assert(0 == uthread_create(&thr[thread_number], thread_dummy_function, thread_number, NULL, 0));
     }
     //DEBUG("Running test_multiple_threads()\n");
     for (thread_number = 0; thread_number < num_threads; thread_number++){
         exit_value = 0;
-        LOG4MINT("Joining thread : ", thread_number);
+        LOG6MINT("Joining thread : ", thread_number);
+        
+        //LOG6MINT("uthread_join output", uthread_join(thr[thread_number], &exit_value));
+        //LOG6MINT("ERRNO ", errno);
         test_assert(0 == uthread_join(thr[thread_number], &exit_value));
         test_assert(exit_value == thread_number);
     }
@@ -516,7 +519,7 @@ static void test_thread_fork_creation(){
 static void
 thread_dummy_function(long a0, void* a1){
     (void) a1;
-    
+    LOG6MINT("TESTING INSIDE DUMMY FUNC : ", 1);
     
     uthread_exit(a0);
     DEBUG("Thread %i got to end of thread_dummy_function. Should have exited. THIS IS BAD\n", uthread_self());
