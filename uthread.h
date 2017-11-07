@@ -72,6 +72,12 @@
 #define LOG5MINT(msg, i) \
         //fprintf(stderr, "LOG: %s [%i]\n",msg, i)
 
+#define LOG6(msg) \
+        //fprintf(stderr, "LOG: %s\n",msg)
+
+#define LOG6MINT(msg, i) \
+        //fprintf(stderr, "LOG: %s [%i]\n",msg, i)
+
 
 
 typedef int uthread_id_t;

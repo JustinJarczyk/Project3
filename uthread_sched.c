@@ -83,7 +83,7 @@ uthread_block(void)
 void
 uthread_wake(uthread_t *uthr)
 {
-    LOG("Entering uthread_wake");
+    LOG6MINT("WAKING UP ", uthr->ut_id);
     assert(uthr != NULL);
     
     assert(uthr->ut_prio >= 0);
@@ -93,6 +93,7 @@ uthread_wake(uthread_t *uthr)
     if (uthr->ut_state == UT_WAIT){
         uthr->ut_state = UT_RUNNABLE;
         LOG("   uthread_wake: calling utqueue_enqueue(runq_table, uthr)");
+        LOG6MINT("QUEUEING ", uthr->ut_id);
         utqueue_enqueue(runq_table, uthr);
     }
     //NOT_YET_IMPLEMENTED("UTHREADS: uthread_wake");
@@ -144,6 +145,7 @@ uthread_setprio(uthread_id_t id, int prio)
                 //t->ut_link->l_next = NULL;
                 
                 t->ut_prio = prio;
+                
                 utqueue_enqueue(runq_table, t);
                 return 0;
             } else {
@@ -181,6 +183,7 @@ uthread_setprio(uthread_id_t id, int prio)
 void
 uthread_switch(void)
 {
+    
     LOG("Entering uthread_switch");
     // weird issue, took contents of the uthread_idle() and placed below
     //uthread_idle();
@@ -201,7 +204,7 @@ uthread_switch(void)
         for (int i = 0; i < UTH_MAX_UTHREADS; i++)
         { 
             
-            /*if (uthreads[i].ut_prio != -1){
+            if (uthreads[i].ut_prio != -1){
                 
                 LOG5("*********************");
                 LOG5MINT("THREAD ID: ",uthreads[i].ut_id);
@@ -210,10 +213,11 @@ uthread_switch(void)
                     LOG5MINT("=====>  Waiter ",uthreads[i].ut_waiter->ut_id);
                 }
                 LOG5MINT("THREAD (WAITING) STATE ",uthreads[i].ut_state);  
-            }*/
+            }
             
             if ((uthreads[i].ut_prio >= pre_highest) && (uthreads[i].ut_state == UT_RUNNABLE)){
                 t = &uthreads[i];
+                LOG6MINT("SETTING NEXT RUN THREAD : ", uthreads[i].ut_id);
                 pre_highest = uthreads[i].ut_prio;
                 isvalid = true;
             }
