@@ -79,10 +79,25 @@
         //fprintf(stderr, "LOG: %s [%i]\n",msg, i)
 
 #define LOG7(msg) \
-        fprintf(stderr, "LOG: %s\n",msg)
+        //fprintf(stderr, "LOG: %s\n",msg)
 
 #define LOG7MINT(msg, i) \
-        fprintf(stderr, "LOG: %s [%i]\n",msg, i)
+        //fprintf(stderr, "LOG: %s [%i]\n",msg, i)
+
+#define LOG8(msg) \
+        //fprintf(stderr, "LOG: %s\n",msg)
+#define LOG8MINT(msg, i) \
+        //fprintf(stderr, "LOG: %s [%i]\n",msg, i)
+
+#define LOG9(msg) \
+        //fprintf(stderr, "LOG: %s\n",msg)
+#define LOG9MINT(msg, i) \
+        //fprintf(stderr, "LOG: %s [%i]\n",msg, i)
+
+#define LOG10(msg) \
+        //fprintf(stderr, "LOG: %s\n",msg)
+#define LOG10MINT(msg, i) \
+        //fprintf(stderr, "LOG: %s [%i]\n",msg, i)
 
 
 

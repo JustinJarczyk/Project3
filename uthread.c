@@ -102,7 +102,7 @@ uthread_create(uthread_id_t *uidp, uthread_func_t func,
 	       long arg1, void *arg2, int prio)
 {
     LOG_CREATE("Entering uthread_create");
- 
+
     assert(uidp != NULL);
     LOG_CREATE("  uthread_create: checking prio");   
     LOG_CREATE_INT( prio);
@@ -115,10 +115,24 @@ uthread_create(uthread_id_t *uidp, uthread_func_t func,
     
     LOG_CREATE("  uthread_create: uthread_alloc");
     uthread_id_t u;
+    
+    int thread_count = 0;
+    for (int i = 0; i < UTH_MAX_UTHREADS; i++)
+    {
+        if(uthreads[i].ut_state != UT_NO_STATE) thread_count++;
+    }
+    
+    LOG9MINT("Thread count ", thread_count);
+    LOG9MINT("UTH_MAX_UTHREADS ", UTH_MAX_UTHREADS);
+    if (thread_count == UTH_MAX_UTHREADS){
+        errno = EAGAIN;
+        return -1;
+    }
+    
     if ((u = uthread_alloc()) == -1){
         // success
         errno = EAGAIN;
-        return - 1;
+        return -1;
     }
     LOG_CREATE("  uthread_create: finished uthread alloc");
     
@@ -197,25 +211,25 @@ void
 uthread_exit(int status)
 {
     
-    LOG4("Entering uthread_exit");
+    LOG7("Entering uthread_exit");
     ut_curthr->ut_state = UT_ZOMBIE;
     ut_curthr->ut_has_exited = true;
     ut_curthr->ut_exit =status;
     
-    LOG3("   uthread_exit: checking if (ut_curthr->ut_detached == true )");
-    LOG3("   uthread_exit: else if (ut_curthr->ut_waiter != NULL) ");
+    LOG7("   uthread_exit: checking if (ut_curthr->ut_detached == true )");
+    LOG7("   uthread_exit: else if (ut_curthr->ut_waiter != NULL) ");
     if (ut_curthr->ut_detached == true ){
-        LOG3("   uthread_exit: calling make_reapable(ut_curthr)");
+        LOG7("   uthread_exit: calling make_reapable(ut_curthr)");
         make_reapable(ut_curthr);
         
-        LOG3("   uthread_exit: finished make_reapable(ut_curthr)");
+        LOG7("   uthread_exit: finished make_reapable(ut_curthr)");
     }
     else{
         if (ut_curthr->ut_waiter != NULL) 
         {
-            LOG3("   uthread_exit: calling uthread_wake");
+            LOG7("   uthread_exit: calling uthread_wake");
              uthread_wake(ut_curthr->ut_waiter);   
-             LOG3("   uthread_exit: finished uthread_wake");
+             LOG7("   uthread_exit: finished uthread_wake");
              //uthread_detach(ut_curthr->ut_id);
         }
         //ut_curthr->ut_detached = 1;
@@ -225,7 +239,7 @@ uthread_exit(int status)
     
     
     //NOT_YET_IMPLEMENTED("UTHREADS: uthread_exit");
-    LOG("   uthread_exit: calling uthread_switch()");
+    LOG7("   uthread_exit: calling uthread_switch()");
     
     if (ut_curthr->ut_id > 1){
         
@@ -267,6 +281,9 @@ int
 uthread_join(uthread_id_t uid, int *return_value)
 {
     LOG("Entering uthread_join");
+ 
+    LOG9MINT("attempting to join to id = ", uid);
+    
     int is_valid = false;
     
     uthread_t *t;
@@ -280,10 +297,11 @@ uthread_join(uthread_id_t uid, int *return_value)
             break;
         }
     }
+
     
     
     if (!is_valid){
-        LOG("   uthread_join : FAILED is_valid");
+        LOG9("   uthread_join : FAILED is_valid");
         errno = ESRCH;
         LOG6MINT("Not Valid Thread ID = ",uid);
         return -1;
@@ -303,6 +321,11 @@ uthread_join(uthread_id_t uid, int *return_value)
         return -1;
     }
     
+    // added in to stop random joins
+    if (t->ut_id == reaper_thr_id){
+        errno = ESRCH;
+        return -1;
+    }
     // calling thread is trying to join itself
     if (ut_curthr->ut_id == uid){
         LOG("   uthread_join : FAILED if (ut_curthr->ut_id == uid){");
@@ -369,37 +392,37 @@ Now arrange for the target to be reaped by calling make_reapable with a pointer 
 int
 uthread_detach(uthread_id_t uid)
 {   
-    LOG4("Entering uthread_detach");
+    LOG7("Entering uthread_detach");
     int isvalid = false;
     uthread_t *u;
     
-    LOG("   uthread_detach: getting the thread to detach");
+    LOG7("   uthread_detach: getting the thread to detach");
     for(int i=0; i <UTH_MAX_UTHREADS; i++ ){
         if(uthreads[i].ut_id == uid){
-            LOG("   uthread_detach: setting [u = &uthreads[i]; and breaking out of loop]");
+            LOG7("   uthread_detach: setting [u = &uthreads[i]; and breaking out of loop]");
             u = &uthreads[i];
             isvalid = true;
             break;
         }
     }
     
-    LOG("   uthread_detach: checking if (!isvalid)");
+    LOG7("   uthread_detach: checking if (!isvalid)");
     if (!isvalid){
-        LOG("   uthread_detach: not valid");
+        LOG7("   uthread_detach: not valid");
         errno = ESRCH;
         return -1;
     }
     
-    LOG("   uthread_detach: setting ut_detached to true");
+    LOG7("   uthread_detach: setting ut_detached to true");
     u->ut_detached = true;
-    LOG("   uthread_detach: checking if [if(u->ut_state == UT_ZOMBIE)]");
+    LOG7("   uthread_detach: checking if [if(u->ut_state == UT_ZOMBIE)]");
     
     if(u->ut_state == UT_ZOMBIE){
-        LOG("   uthread_detach: calling make_reapable");
+        LOG7("   uthread_detach: calling make_reapable");
         make_reapable(u);
     }
     
-    LOG("   uthread_detach: leaving");   
+    LOG7("   uthread_detach: leaving");   
 	//NOT_YET_IMPLEMENTED("UTHREADS: uthread_detach");
     return 0;
 }

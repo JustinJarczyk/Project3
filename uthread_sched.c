@@ -189,6 +189,8 @@ uthread_switch(void)
     // weird issue, took contents of the uthread_idle() and placed below
     //uthread_idle();
     int pre_highest = 0;
+    int thread_count = 0;
+    
     
     int isvalid = false;
     
@@ -200,28 +202,52 @@ uthread_switch(void)
         //sleep(1);
         pre_highest = 0;
 
-        
+        //get the thread count once
+        if (thread_count == 0){
+            for (int i = 0; i < UTH_MAX_UTHREADS; i++)
+            {
+                if (uthreads[i].ut_state == UT_RUNNABLE && uthreads[i].ut_prio > 0) thread_count++;
+            }
+        }
+        LOG7MINT("THREAD COUNT : ", thread_count);  
         //LOG4("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
         for (int i = 0; i < UTH_MAX_UTHREADS; i++)
         { 
             
-            /*if (uthreads[i].ut_prio != -1){
+            if (uthreads[i].ut_state != UT_NO_STATE
+                    && uthreads[i].ut_prio > 0){
                 
-                LOG5("*********************");
-                LOG5MINT("THREAD ID: ",uthreads[i].ut_id);
-                LOG5MINT("THREAD  PRIORITY ",uthreads[i].ut_prio);
+                LOG10("*********************");
+                LOG10MINT("THREAD ID: ",uthreads[i].ut_id);
+                LOG10MINT("THREAD  PRIORITY ",uthreads[i].ut_prio);
                 if (uthreads[i].ut_waiter != NULL){
-                    LOG5MINT("=====>  Waiter ",uthreads[i].ut_waiter->ut_id);
+                    LOG10MINT("=====>  Waiter ",uthreads[i].ut_waiter->ut_id);
                 }
-                LOG5MINT("THREAD (WAITING) STATE ",uthreads[i].ut_state);  
-            }*/
+                LOG10MINT("THREAD (WAITING) STATE ",uthreads[i].ut_state);  
+            }
             
-            if ((uthreads[i].ut_prio >= pre_highest) && (uthreads[i].ut_state == UT_RUNNABLE)){
-                    //&& (uthreads[i].ut_link.l_next != NULL && uthreads[i].ut_link.l_prev != NULL)){ // TEST 5 ???
-                t = &uthreads[i];
-                LOG6MINT("SETTING NEXT RUN THREAD : ", uthreads[i].ut_id);
-                pre_highest = uthreads[i].ut_prio;
-                isvalid = true;
+            
+            if ((uthreads[i].ut_prio >= pre_highest) 
+                    && (uthreads[i].ut_state == UT_RUNNABLE)){
+                    
+                if (thread_count > 1){
+                    // execute all other threads besides the main thread
+                    if (uthreads[i].ut_id != 1){
+                        t = &uthreads[i];
+                        LOG7MINT("SETTING NEXT RUN THREAD : ", uthreads[i].ut_id);
+                        pre_highest = uthreads[i].ut_prio;
+                        isvalid = true;
+                    }
+                } else {
+                    // main thread is left only
+                    //break;
+                    t = &uthreads[i];
+                    LOG7MINT("SETTING NEXT RUN THREAD : ", uthreads[i].ut_id);
+                    pre_highest = uthreads[i].ut_prio;
+                    isvalid = true;
+                    
+                }
+                
             }
         }
     }

@@ -377,9 +377,10 @@ static void test_detached_threads(){
     uthread_setprio(uthread_self(), 0);
     for(thread_number = 0; thread_number < num_thr; thread_number++){
         test_assert(0 == uthread_create(&thr[thread_number],
-                    thread_add_ten_to_counter_with_initial_wait, thread_number, NULL, 1));
+                thread_add_ten_to_counter_with_initial_wait, thread_number, NULL, 1));
         uthread_detach(thr[thread_number]);
     }
+    
     
     /* Tell all the threads to go! */
     test_pause = 0;
@@ -416,11 +417,14 @@ static void test_detached_threads(){
 static void test_thread_bomb(){
     DEBUG("Running test_thread_bomb()\n");
     int i,j, exit_value;
-    int num_thr = UTH_MAX_UTHREADS;
+    
+    int threadsToRun = UTH_MAX_UTHREADS;
+    
+    int num_thr = threadsToRun;
     //one init thread, one reaper thread already exist
-    int num_thr_avail = UTH_MAX_UTHREADS-2; 
-    uthread_id_t thr[UTH_MAX_UTHREADS];
-    memset(thr,0,UTH_MAX_UTHREADS);
+    int num_thr_avail = threadsToRun-2; 
+    uthread_id_t thr[threadsToRun];
+    memset(thr,0,threadsToRun);
     
     test_reset();
     test_pause = 1;
@@ -481,6 +485,10 @@ static void test_thread_bomb(){
     
     /* Wait for all the threads to finish incrementing */
     while(test_counter < 10*num_thr_avail) {
+        LOG10MINT("test counter : ", test_counter);
+        LOG10MINT("< num : ", 10*num_thr_avail);
+        
+        //sleep(1);
         DEBUG("Waiting for detached threads to finish... (spinning)\n");
         uthread_yield();
     }
@@ -561,6 +569,7 @@ static void
 thread_add_ten_to_counter_with_initial_wait(long a0, void* a1){
     (void) a1;
     int i;
+    
     uthread_mtx_lock(&test_pause_mtx);
     while(test_pause)
         uthread_cond_wait(&test_pause_cond, &test_pause_mtx);
@@ -575,7 +584,9 @@ thread_add_ten_to_counter_with_initial_wait(long a0, void* a1){
         uthread_mtx_unlock(&test_mtx);
         test_counter_guard = 0;
         uthread_cond_signal(&test_cond);
+        
     }
+    LOG8MINT("Thread # : ", a0 );
 	uthread_exit(a0);
 }
 
