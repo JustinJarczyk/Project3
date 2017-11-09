@@ -90,6 +90,7 @@ utqueue_dequeue(utqueue_t *q)
 void
 utqueue_remove(utqueue_t *q, uthread_t *thr)
 {
+    //LOG11("removed");
 	assert(thr->ut_link.l_next != NULL && thr->ut_link.l_prev != NULL);
 
 	list_remove(&thr->ut_link);

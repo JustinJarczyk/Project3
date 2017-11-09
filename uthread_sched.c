@@ -149,7 +149,12 @@ uthread_setprio(uthread_id_t id, int prio)
                 utqueue_enqueue(runq_table, t);
                 return 0;
             } else {
+                
+                
+                if (t->ut_link.l_next != NULL && t->ut_link.l_prev != NULL){
                 utqueue_remove(runq_table, t);
+                }
+                    
                 t->ut_prio = prio;
                 utqueue_enqueue(runq_table, t);
             }
@@ -255,9 +260,10 @@ uthread_switch(void)
     LOG("   uthread_switch: exiting while loop");
     LOGINT2("THIS IS THE HIGHEST PRIORITY JOB ID ", t->ut_id);
     
-
-    utqueue_remove(runq_table, t);
-
+    //LOG11("removed");
+    if (t->ut_link.l_next != NULL && t->ut_link.l_prev != NULL){
+        utqueue_remove(runq_table, t);
+    }
 
     assert(t->ut_stack != NULL);
 
