@@ -434,6 +434,7 @@ static void test_thread_bomb(){
 		if (i < num_thr_avail) {
 			test_assert(0 == uthread_create(&thr[i], thread_add_ten_to_counter_with_initial_wait, i, NULL, 0));
 		} else {
+                    LOG10("2x");
 			test_error(uthread_create(&thr[i], thread_add_ten_to_counter_with_initial_wait, i, NULL, 0), EAGAIN);
 		}
 
@@ -443,6 +444,7 @@ static void test_thread_bomb(){
     }
     
     /* Screw with priorities a lot */
+    
     for (j = 0; j < 10; j++){
         for(i = 0; i < num_thr_avail; i++){
             uthread_setprio(thr[i],(i*j)%(UTH_MAXPRIO+1));

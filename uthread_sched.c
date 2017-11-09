@@ -206,14 +206,15 @@ uthread_switch(void)
         if (thread_count == 0){
             for (int i = 0; i < UTH_MAX_UTHREADS; i++)
             {
-                if (uthreads[i].ut_state == UT_RUNNABLE && uthreads[i].ut_prio > 0) thread_count++;
+                if (uthreads[i].ut_state == UT_RUNNABLE  ) { thread_count++; }
+                //if (uthreads[i].ut_state != UT_NO_STATE) { thread_count++; }
             }
         }
-        LOG7MINT("THREAD COUNT : ", thread_count);  
+        LOG10MINT("THREAD COUNT : ", thread_count);  
         //LOG4("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
         for (int i = 0; i < UTH_MAX_UTHREADS; i++)
         { 
-            
+            /*
             if (uthreads[i].ut_state != UT_NO_STATE
                     && uthreads[i].ut_prio > 0){
                 
@@ -224,7 +225,7 @@ uthread_switch(void)
                     LOG10MINT("=====>  Waiter ",uthreads[i].ut_waiter->ut_id);
                 }
                 LOG10MINT("THREAD (WAITING) STATE ",uthreads[i].ut_state);  
-            }
+            }*/
             
             
             if ((uthreads[i].ut_prio >= pre_highest) 
