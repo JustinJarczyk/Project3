@@ -100,9 +100,9 @@
         //fprintf(stderr, "LOG: %s [%i]\n",msg, i)
 
 #define LOG11(msg) \
-        fprintf(stderr, "LOG: %s\n",msg)
+        //fprintf(stderr, "LOG: %s\n",msg)
 #define LOG11MINT(msg, i) \
-        fprintf(stderr, "LOG: %s [%i]\n",msg, i)
+        //fprintf(stderr, "LOG: %s [%i]\n",msg, i)
 
 
 

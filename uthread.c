@@ -292,6 +292,7 @@ uthread_join(uthread_id_t uid, int *return_value)
     for (int i = 0; i < UTH_MAX_UTHREADS ; i++)
     { 
         if ((uthreads[i].ut_id == uid) && (uthreads[i].ut_state != UT_NO_STATE)){
+            
             t = &uthreads[i];
             is_valid = true;
             break;
@@ -354,7 +355,7 @@ uthread_join(uthread_id_t uid, int *return_value)
          memcpy ( return_value, &t->ut_exit, sizeof ( uthread_id_t ));
          //return_value = &t->ut_exit;
      }
-
+    
 
     return 0;
     /*
