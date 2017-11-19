@@ -1,7 +1,3 @@
-Justin Jarczyk, Erik Littleton, Caylah Peoples
-
-Assignment 3 - Writing Multi-Threaded Applications
-
 # Project overview.
 
 uthreads is a user-level threading package that is designed to behave similar to pthreads . This package contains support of the creation, deletion, and joining of threads and functions that deal with mutexes and condition variables.
